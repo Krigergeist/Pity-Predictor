@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>Pity Predictor</title>
+  </head>
+  <body>
+    <div class="box">
+      <center><h2>Pity Predictor</h2></center>
+      <center><p>Prediksi pity gacha mu!</p></center>
+      <select id="game-select">
+        <option value="">Pilih Game</option>
+        <option value="HSR">HSR</option>
+      </select>
+
+      <select id="character-select" disabled>
+        <option value="">Pilih Karakter</option>
+      </select>
+
+      <button id="predict-btn" disabled>Prediksi!</button>
+
+      <button id="history-btn">Riwayat</button>
+      <button id="history-reset" onclick="location.reload()">
+        Reset Riwayat
+      </button>
+      <div id="history-panel" class="history-panel"></div>
+
+      <div style="margin-top: 20px">
+        <button onclick="location.reload()">Reload</button>
+      </div>
+
+      <center>
+        <p style="font-size: xx-small; color: red">
+          Perhatian! Hasil prediksi mungkin berbeda dengan hasil gacha di game.
+        </p>
+      </center>
+
+      <div style="margin-top: 10px; font-size: 12px; color: #777">
+        Lisensi:
+        <a href="LICENSE" target="_blank" style="text-decoration: none">MIT</a>
+      </div>
+    </div>
+
+    <div id="popup" class="popup" onclick="closePopup(event)">
+      <div class="popup-content" onclick="event.stopPropagation()">
+        <p id="popup-message"></p>
+        <button onclick="closePopup()">Kembali</button>
+      </div>
+    </div>
+
+    <script>
+      const gameSelect = document.getElementById("game-select");
+      const charSelect = document.getElementById("character-select");
+      const predictBtn = document.getElementById("predict-btn");
+      const popup = document.getElementById("popup");
+      const popupMsg = document.getElementById("popup-message");
+      const historyPanel = document.getElementById("history-panel");
+      const historyBtn = document.getElementById("history-btn");
+      const historyReset = document.getElementById("history-reset");
+
+      document.body.style.height = "100vh";
+
+      const characters = {
+        HSR: [
+          "Seele",
+          "Jing Yuan",
+          "Silver Wolf",
+          "Luocha",
+          "Kafka",
+          "Blade",
+          "Dan Heng • Imbibitor Lunae",
+          "Fu Xuan",
+          "Jing Liu",
+          "Topaz",
+          "Huohuo",
+          "Argenti",
+          "Ruan Mei",
+          "Dr. Ratio",
+          "Black Swan",
+          "Sparkle",
+          "Acheron",
+          "Aventurine",
+          "Robin",
+          "Boothill",
+          "Firefly",
+          "Jade",
+          "Yunli",
+          "Jiao Qiu",
+          "Fei Xiao",
+          "Lingsha",
+          "Rappa",
+          "Sunday",
+          "Fugue",
+          "The Herta",
+          "Aglea",
+          "Tribbie",
+          "Mydei",
+          "Castorice",
+          "Anaxa",
+          "Hyacine",
+          "Cipher",
+        ],
+      };
+
+      gameSelect.addEventListener("change", () => {
+        const game = gameSelect.value;
+        charSelect.innerHTML = '<option value="">Pilih Karakter</option>';
+        if (game && characters[game]) {
+          characters[game].forEach((c) => {
+            const option = document.createElement("option");
+            option.value = c;
+            option.textContent = c;
+            charSelect.appendChild(option);
+          });
+          charSelect.disabled = false;
+        } else {
+          charSelect.disabled = true;
+          predictBtn.disabled = true;
+        }
+      });
+
+      charSelect.addEventListener("change", () => {
+        predictBtn.disabled = !charSelect.value;
+        predictBtn.classList.toggle("active-btn", !!charSelect.value);
+      });
+
+      predictBtn.addEventListener("click", () => {
+        let pity = Math.floor(Math.random() * 180) + 1; // nilai random antara 1 hingga 180
+        const interval = setInterval(() => {
+          if (pity < 90) {
+            // dua kemungkinan jika nilai pity kurang dari 90
+            const randomOutcome = Math.random() < 0.5;
+            if (randomOutcome) {
+              pity += Math.floor(Math.random() * 5) + 1; // komputasi lagi dengan penambahan nilai
+            } else {
+              clearInterval(interval);
+              showResult(pity); // menampilkan hasil jika hasil random tidak memilih komputasi lagi
+              saveHistory(gameSelect.value, charSelect.value, pity);
+              predictBtn.textContent = "Prediksi!";
+            }
+          } else {
+            clearInterval(interval);
+            showResult(pity); // menampilkan hasil akhir
+            saveHistory(gameSelect.value, charSelect.value, pity);
+            predictBtn.textContent = "Prediksi!";
+          }
+        }, 60);
+      });
+
+      function showResult(pity) {
+        let msg = "";
+        if (pity <= 30) msg = "🔥 Gokil!";
+        else if (pity <= 70) msg = "😎 Lumayan! Masih hoki.";
+        else if (pity <= 90)
+          msg = "💪 Semangat bang! Walaupun pity tinggi tetap menang kok!";
+        else
+          msg =
+            "🫡 Semangat Baaaang! walaupun pity tinggi tapi jangan menyerahya ";
+        popupMsg.textContent = msg + ` (Pity: ${pity})`;
+        popup.style.display = "flex";
+      }
+
+      function closePopup() {
+        popup.style.display = "none";
+      }
+
+      function saveHistory(game, chara, pity) {
+        const hist = JSON.parse(localStorage.getItem("pityHistory") || "[]");
+        hist.push(`${game} - ${chara} - ${pity}`);
+        localStorage.setItem("pityHistory", JSON.stringify(hist));
+        updateHistoryPanel();
+      }
+
+      function updateHistoryPanel() {
+        const hist = JSON.parse(localStorage.getItem("pityHistory") || "[]");
+        historyPanel.innerHTML =
+          "<strong>History:</strong><br>" +
+          hist.map((h) => `<div>${h}</div>`).join("");
+      }
+
+      historyBtn.addEventListener("click", () => {
+        document.body.style.height = "100%";
+        historyPanel.style.display =
+          historyPanel.style.display === "block" ? "none" : "block";
+        updateHistoryPanel();
+      });
+      historyReset.addEventListener("click", () => {
+        localStorage.clear();
+      });
+    </script>
+  </body>
+</html>
