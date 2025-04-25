@@ -1,4 +1,4 @@
-# 🎰 Pity Prediction Web App
+# 🎰 Pity Predictor Web App
 
 A simple and stylish web application for simulating gacha "pity" predictions, inspired by **Honkai: Star Rail (HSR)**.
 
